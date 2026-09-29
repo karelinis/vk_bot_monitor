@@ -229,14 +229,14 @@ bool getLongPollServer() {
 bool isSensorCommand(String text) {
   text.toLowerCase();
   text.trim();
-  return (text.indexOf("датчик") != -1 || text.indexOf("датчики") != -1);
+  return (text.indexOf("датчик") != -1 || text.indexOf("датчики") != -1 || text.indexOf("Датчик") != -1 || text.indexOf("Датчики") != -1);
 }
 
 // Проверка текста на команду перезагрузки
 bool isRebootCommand(String text) {
   text.toLowerCase();
   text.trim();
-  return (text.indexOf("перезагрузка") != -1 || text.indexOf("ребут") != -1);
+  return (text.indexOf("перезагрузка") != -1 || text.indexOf("Перезагрузка") != -1);
 }
 
 // Проверка входящих сообщений Long Poll
