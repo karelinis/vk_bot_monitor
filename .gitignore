@@ -5,6 +5,10 @@
 .vscode/launch.json
 .vscode/ipch
 #Файлы, которые попадают в файловую систему на esp32, содержат токены
+<<<<<<< HEAD
 data/*
 #Конфиг opencode
 opencode.jsonc
+=======
+data/* 
+>>>>>>> f98f9804c9398211dd40be455f8c92857bd28fdb
