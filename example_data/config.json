@@ -1,0 +1,9 @@
+{
+  "wifi_ssid": "Логин wifi",
+  "wifi_pass": "Пароль wifi",
+  "vk_token": "Токен вк сообщества",
+  "group_id": "id группы",
+  "admin_peer_ids": [0, 0],
+  "i2c_sda": 0,
+  "i2c_scl": 0
+}
