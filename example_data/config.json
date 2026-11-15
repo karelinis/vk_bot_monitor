@@ -5,5 +5,7 @@
   "group_id": "id группы",
   "admin_peer_ids": [0, 0],
   "i2c_sda": 0,
-  "i2c_scl": 0
+  "i2c_scl": 0,
+  "wol_mac_address": "AA:BB:CC:DD:EE:FF",
+  "wol_enabled": true
 }

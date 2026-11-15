@@ -1,0 +1,22 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "llama-local/deepseek-9b",
+  "providers": {
+    "llama-local": {
+      "name": "llama.cpp",
+      "package": "@opencode/ai/providers/openai-compatible",
+      "settings": {
+        "baseURL": "http://127.0.0.1:9931/v1"
+      },
+      "models": {
+        "deepseek-9b": {
+          "name": "DeepSeek V4 Pro 9B Uncensored",
+          "limit": {
+            "context": 20000, 
+            "output": 4096
+          }
+        }
+      }
+    }
+  }
+}
