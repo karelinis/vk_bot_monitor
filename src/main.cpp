@@ -8,7 +8,6 @@
 #include <Adafruit_BMP280.h>
 #include <LittleFS.h>
 #include <vector>
-#include <WakeOnLan.h>
 
 // --- НАСТРОЙКА СВЕТОДИОДА ---
 #ifndef LED_BUILTIN
@@ -23,8 +22,6 @@ String group_id;
 std::vector<long> admin_peer_ids;
 int i2c_sda = 21;
 int i2c_scl = 22;
-String wol_mac_address;
-bool wol_enabled = false;
 
 // --- СЕНСОРЫ И ИХ ФЛАГИ ---
 Adafruit_AHTX0 aht;
@@ -74,14 +71,6 @@ bool loadConfig() {
   JsonArray admins = doc["admin_peer_ids"].as<JsonArray>();
   for (JsonVariant v : admins) {
     admin_peer_ids.push_back(v.as<long>());
-  }
-
-  // WoL configuration
-  wol_enabled = doc["wol_enabled"] | false;
-  wol_mac_addresses.clear();
-  JsonArray macs = doc["wol_mac_addresses"].as<JsonArray>();
-  for (JsonVariant v : macs) {
-    wol_mac_addresses.push_back(v.as<String>());
   }
 
   Serial.println("[FS] Конфигурация успешно загружена!");
@@ -250,18 +239,17 @@ bool isRebootCommand(String text) {
   return (text.indexOf("перезагрузка") != -1 || text.indexOf("Перезагрузка") != -1);
 }
 
-// Проверка: является ли peer_id администратором бота?
-bool isPeerAdmin(long peer_id);
-
 // Проверка входящих сообщений Long Poll
 void checkLongPoll() {
-  HTTPClient http;
   if (server == "" || key == "" || ts == "") {
     if (!getLongPollServer()) {
       delay(3000);
       return;
     }
   }
+
+  HTTPClient http;
+  http.setTimeout(30000);
 
   String url = server + "?act=a_check&key=" + key + "&ts=" + ts + "&wait=25";
 
@@ -294,17 +282,11 @@ void checkLongPoll() {
           String text = message["text"].as<String>();
 
           // 1. Команда получения показаний
-          if (isSensorCommand(text) && isPeerAdmin(peer_id)) {
+          if (isSensorCommand(text)) {
             sendMessage(peer_id, getSensorsReport());
           } 
-          // 2. Команда пробуждения WoL - одно устройство
-          else if (isWoLCommand(text) && isPeerAdmin(peer_id)) {
-            // Отправляем WoL пакеты на ВСЕ настроенные MAC-адреса
-            sendWakeOnLanAll();
-            sendMessage(peer_id, "📡 WoL пакеты отправлены на все " + std::to_string(wol_mac_addresses.size()) + " устройства!");
-          }
-          // 3. Команда дистанционной перезагрузки (отправляется всем, включая админов)
-          else if (isRebootCommand(text) && isPeerAdmin(peer_id)) {
+          // 2. Команда дистанционной перезагрузки
+          else if (isRebootCommand(text)) {
             sendMessage(peer_id, "🔄 Выполняется перезагрузка ESP32...");
             delay(1000); // Даем время HTTP-клиенту полностью завершить отправку пакета
             ESP.restart();
@@ -316,61 +298,6 @@ void checkLongPoll() {
     delay(2000);
   }
   http.end();
-}
-
-// Проверка: является ли peer_id администратором бота?
-bool isPeerAdmin(long peer_id) {
-  for (long admin_id : admin_peer_ids) {
-    if (admin_id == peer_id) {
-      return true;
-    }
-  }
-  return false;
-}
-
-// --- Wake On LAN (WoL) ---
-// Глобальный вектор MAC-адресов для WoL
-std::vector<String> wol_mac_addresses;
-
-// Отправка магического пакета для пробуждения устройства по MAC-адресу
-void sendWakeOnLan(const String& macAddress) {
-  if (!wol_enabled || macAddress.isEmpty()) {
-    Serial.println("[WoL] WoL отключен или MAC-адрес не указан!");
-    return;
-  }
-
-  // Используем библиотеку a7md0/WakeOnLan для отправки магического пакета
-  WakeOnLan mac(macAddress.c_str());
-  mac.wakeOnLan();
-
-  Serial.printf("[WoL] Магический пакет отправлен на MAC: %s\n", macAddress.c_str());
-}
-
-// Отправка WoL пакетов на ВСЕ настроенные MAC-адреса
-void sendWakeOnLanAll() {
-  if (!wol_enabled) {
-    Serial.println("[WoL] WoL отключен!");
-    return;
-  }
-  
-  if (wol_mac_addresses.empty()) {
-    Serial.println("[WoL] Нет настроенных MAC-адресов!");
-    return;
-  }
-  
-  for (const String& mac : wol_mac_addresses) {
-    sendWakeOnLan(mac);
-    delay(50); // Небольшая задержка между пакетами
-  }
-  Serial.println("[WoL] WoL пакеты отправлены на все устройства!");
-}
-
-// Проверка текста на команду пробуждения
-bool isWoLCommand(String text) {
-  text.toLowerCase();
-  text.trim();
-  return (text.indexOf("woL") != -1 || text.indexOf("wake") != -1 || 
-          text.indexOf("wake_on_lan") != -1 || text.indexOf("пробуждение") != -1);
 }
 
 void setup() {
